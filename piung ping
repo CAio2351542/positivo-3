@@ -1,0 +1,161 @@
+let bal
+let leftPaddle;
+let rightPaddle;
+
+function setup() {
+  createCanvas(800, 400);
+ 
+  // Criar a bola no centro da tela
+  ball = new Ball(width / 2, height / 2);
+  l;
+  // Criar os jogadores
+  leftPaddle = new Paddle(true); // jogador à esquerda
+  rightPaddle = new Paddle(false); // jogador à direita
+}
+
+function draw() {
+  background(0);
+ 
+  // Mostrar e mover a bola
+  ball.update();
+  ball.display();
+ 
+  // Movimento automático da raquete da esquerda
+  leftPaddle.ai();
+ 
+  // Mostrar e mover os jogadores
+  leftPaddle.display();
+  rightPaddle.update();
+  rightPaddle.display();
+ 
+  // Verificar colisões entre a bola e os jogadores
+  ball.checkCollision(leftPaddle);
+  ball.checkCollision(rightPaddle);
+}
+
+// Função para detectar teclas pressionadas
+function keyPressed() {
+  if (keyCode === UP_ARROW) {
+    rightPaddle.isUp = true;
+  } else if (keyCode === DOWN_ARROW) {
+    rightPaddle.isDown = true;
+  }
+}
+
+// Função para detectar teclas liberadas
+function keyReleased() {
+  if (keyCode === UP_ARROW) {
+    rightPaddle.isUp = false;
+  } else if (keyCode === DOWN_ARROW) {
+    rightPaddle.isDown = false;
+  }
+}
+
+// Classe para a bola
+class Ball {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(5); // velocidade inicial
+    this.size = 20;
+  }
+ 
+  update() {
+    this.pos.add(this.vel);
+   
+    // Verificar colisão com as paredes superior e inferior
+    if (this.pos.y < 0 || this.pos.y > height) {
+      this.vel.y *= -1;
+    }
+   
+    // Verificar se a bola saiu pela esquerda ou direita
+    if (this.pos.x < 0 || this.pos.x > width) {
+      // Se saiu pela esquerda, ponto para a direita
+      if (this.pos.x < 0) {
+        rightPaddle.score++;
+      }
+      // Se saiu pela direita, ponto para a esquerda
+      else {
+        leftPaddle.score++;
+      }
+      // Resetar posição da bola
+      this.pos = createVector(width / 2, height / 2);
+      this.vel = p5.Vector.random2D().mult(5);
+    }
+  }
+ 
+  display() {
+    fill(255);
+    noStroke();
+    ellipse(this.pos.x, this.pos.y, this.size);
+  }
+ 
+  // Verificar colisão com um jogador
+  checkCollision(paddle) {
+    if (this.pos.x - this.size / 2 < paddle.pos.x + paddle.width / 2 &&
+        this.pos.x + this.size / 2 > paddle.pos.x - paddle.width / 2 &&
+        this.pos.y - this.size / 2 < paddle.pos.y + paddle.height / 2 &&
+        this.pos.y + this.size / 2 > paddle.pos.y - paddle.height / 2) {
+      // Colisão detectada
+      this.vel.x *= -1; // Inverter direção x da bola
+    }
+  }
+}
+
+// Classe para os jogadores
+class Paddle {
+  constructor(isLeft) {
+    this.width = 10;
+    this.height = 80;
+    this.pos = createVector(isLeft ? this.width : width - this.width, height / 2);
+    this.vel = createVector(0, 0);
+    this.speed = 6; // Velocidade de movimento automático
+    this.isLeft = isLeft;
+    this.isUp = false; // Flag para cima (raquete da direita)
+    this.isDown = false; // Flag para baixo (raquete da direita)
+    this.score = 0;
+  }
+ 
+  // Movimento automático da raquete da esquerda
+  ai() {
+    // A raquete da esquerda segue a posição y da bola
+    if (this.isLeft) {
+      if (ball.pos.y < this.pos.y) {
+        this.pos.y -= this.speed;
+      } else if (ball.pos.y > this.pos.y) {
+        this.pos.y += this.speed;
+      }
+    }
+   
+    // Limitar a posição do jogador para dentro da tela
+    this.pos.y = constrain(this.pos.y, this.height / 2, height - this.height / 2);
+  }
+ 
+  // Movimento manual da raquete da direita
+  update() {
+    if (this.isUp) {
+      this.pos.y -= this.speed;
+    } else if (this.isDown) {
+      this.pos.y += this.speed;
+    }
+   
+    // Limitar a posição do jogador para dentro da tela
+    this.pos.y = constrain(this.pos.y, this.height / 2, height - this.height / 2);
+  }
+ 
+  display() {
+    fill(255);
+    noStroke();
+    rectMode(CENTER);
+    rect(this.pos.x, this.pos.y, this.width, this.height);
+   
+    // Mostrar pontuação do jogador
+    textAlign(CENTER);
+    textSize(32);
+    text(this.score, this.pos.x, 50);
+  }
+ 
+  // Função de resetar a posição da raquete
+  resetPosition() {
+    this.pos.y = height / 2;
+  }
+}
